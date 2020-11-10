@@ -6,15 +6,16 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.ImageButton
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.florent37.runtimepermission.kotlin.askPermission
 import it.awt.mycroft.deepspeech.R
+import it.awt.mycroft.deepspeech.domain.Utterance
+import it.awt.mycroft.deepspeech.domain.UtteranceActor
 
 
 class SpeechFragment : Fragment() {
@@ -23,6 +24,7 @@ class SpeechFragment : Fragment() {
         fun newInstance() = SpeechFragment()
     }
 
+    private var microphoneActivityDialog: MicrophoneActivityDialog? = null
     private lateinit var viewModel: SpeechViewModel
 
     override fun onCreateView(
@@ -30,7 +32,7 @@ class SpeechFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val v = inflater.inflate(R.layout.speech_fragment, container, false)
-        v.findViewById<Button>(R.id.button).setOnClickListener {
+        v.findViewById<ImageButton>(R.id.button).setOnClickListener {
             startSpeechRecognition(it)
         }
         return v
@@ -41,13 +43,47 @@ class SpeechFragment : Fragment() {
         viewModel = ViewModelProviders.of(this).get(SpeechViewModel::class.java)
         viewModel.spokenList.observe(viewLifecycleOwner, {
             refreshSpokenList(it)
-            if (it.last().first.equals("Me")) {
-                viewModel.sendRequest(it.last().second);
+            if (it.last().actor.equals(UtteranceActor.USER)) {
+                viewModel.sendRequest(it.last().text);
             }
+        })
+
+        viewModel.recording.observe(viewLifecycleOwner, {
+            if (it) {
+                showRecordingFragment();
+            } else {
+                hideRecordingFragment();
+            }
+        })
+        viewModel.voiceActivity.observe(viewLifecycleOwner, {
+                pulseRecordingFragment(it);
         })
     }
 
-    private fun refreshSpokenList(newList: List<Pair<String, String>>) {
+    private fun pulseRecordingFragment(d: Double) {
+        microphoneActivityDialog?.pulse(d)
+    }
+
+    private fun hideRecordingFragment() {
+        microphoneActivityDialog?.apply {
+            val fragmentTransaction = fragmentManager?.beginTransaction()
+            fragmentTransaction?.remove(this)
+            fragmentTransaction?.commit()
+        }
+    }
+
+    private fun showRecordingFragment() {
+        hideRecordingFragment()
+
+        val fragmentTransaction = fragmentManager?.beginTransaction()
+        microphoneActivityDialog = MicrophoneActivityDialog().apply {
+            isCancelable = false
+        }
+        fragmentTransaction?.add(microphoneActivityDialog!!, "mic_activity")
+        fragmentTransaction?.commit()
+    }
+
+    private fun refreshSpokenList(newList: List<Utterance>) {
         Log.i("tag", "newList: " + newList.toString())
         val recyclerView = view?.findViewById<RecyclerView>(R.id.recyclerView)
         recyclerView?.apply {
@@ -58,7 +94,7 @@ class SpeechFragment : Fragment() {
         }
     }
 
-    private fun makeAdapter(newList: List<Pair<String, String>>): UtteranceAdapter {
+    private fun makeAdapter(newList: List<Utterance>): UtteranceAdapter {
         return UtteranceAdapter(newList)
     }
 

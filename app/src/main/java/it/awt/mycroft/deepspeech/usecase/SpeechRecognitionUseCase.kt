@@ -12,7 +12,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import kotlin.coroutines.suspendCoroutine
 import com.mozilla.speechlibrary.SpeechResultCallback
@@ -23,37 +22,43 @@ import kotlin.coroutines.resume
 class SpeechRecognitionUseCase {
     private val TAG: String = "SpeechRecognitionUseCase"
     private val MODEL_PATH = "deepspeech/models/it/"
+    private val LANGUAGE = "it-it"
 
-    suspend fun startSpeechRecognition(ctx : Context, mSpeechService : SpeechService) : Either<Throwable, String>{
+    suspend fun startSpeechRecognition(ctx : Context, mSpeechService : SpeechService, voiceListener : SpeechResultCallback?) : Either<Throwable, String>{
         return suspendCoroutine { cont ->
 
             val mVoiceSearchListener = object : SpeechResultCallback{
                 override fun onStartListen() {
+                    voiceListener?.onStartListen()
                 }
 
                 override fun onMicActivity(fftsum: Double) {
+                    voiceListener?.onMicActivity(fftsum)
                 }
 
                 override fun onDecoding() {
+                    voiceListener?.onDecoding()
                 }
 
                 override fun onSTTResult(result: STTResult?) {
                     cont.resume(Either.Success(result?.mTranscription!!))
+                    voiceListener?.onSTTResult(result)
                 }
 
                 override fun onNoVoice() {
+                    voiceListener?.onNoVoice()
                 }
 
                 override fun onError(@SpeechResultCallback.ErrorType errorType: Int, error: String?) {
                     cont.resume(Either.Error(IllegalArgumentException(error)))
+                    voiceListener?.onError(errorType, error)
                 }
             }
-            val language = "it-it"
             val modelPath =
                 ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)?.absoluteFile?.toPath()
                     ?.resolve(MODEL_PATH)?.toString();
             val builder: SpeechServiceSettings.Builder = SpeechServiceSettings.Builder()
-                .withLanguage(language)
+                .withLanguage(LANGUAGE)
                 .withStoreSamples(true)
                 .withStoreTranscriptions(true)
                 .withProductTag("product-tag")
