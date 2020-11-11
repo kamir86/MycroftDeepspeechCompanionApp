@@ -12,32 +12,36 @@ import it.awt.mycroft.deepspeech.domain.Utterance
 import it.awt.mycroft.deepspeech.domain.UtteranceActor
 
 
-class UtteranceAdapter(private val newList: List<Utterance>) : RecyclerView.Adapter<UtteranceAdapter.UtteranceViewHolder>() {
+class UtteranceAdapter(private var itemList: List<Utterance>) : RecyclerView.Adapter<UtteranceAdapter.UtteranceViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UtteranceViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.utterance_fragment, parent, false)
         return UtteranceViewHolder(view)
     }
 
-    class UtteranceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    fun refreshList(newList: List<Utterance>){
+        itemList = newList
+        notifyDataSetChanged()
     }
+
+    class UtteranceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
     override fun onBindViewHolder(holder: UtteranceViewHolder, position: Int) {
         val textView = holder.itemView.findViewById<TextView>(R.id.utterance_text)
         val ll = holder.itemView as LinearLayout;
-        if(newList[position].actor == UtteranceActor.USER) {
+        if(itemList[position].actor == UtteranceActor.USER) {
             ll.gravity = Gravity.END;
         }else{
             ll.gravity = Gravity.START;
         }
         ll.requestLayout()
         textView.apply {
-            if(newList[position].actor == UtteranceActor.USER){
+            if(itemList[position].actor == UtteranceActor.USER){
                 applyUserStyle(textView);
             }else{
                 applyMycroftStyle(textView);
             }
-            text = newList[position].text
+            text = itemList[position].text
         }
     }
 
@@ -64,7 +68,7 @@ class UtteranceAdapter(private val newList: List<Utterance>) : RecyclerView.Adap
     }
 
     override fun getItemCount(): Int {
-        return newList.size;
+        return itemList.size;
     }
 
 }

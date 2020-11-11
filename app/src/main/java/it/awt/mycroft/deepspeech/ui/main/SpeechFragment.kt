@@ -35,6 +35,14 @@ class SpeechFragment : Fragment() {
         v.findViewById<ImageButton>(R.id.button).setOnClickListener {
             startSpeechRecognition(it)
         }
+
+        val recyclerView = v.findViewById<RecyclerView>(R.id.recyclerView)
+        recyclerView?.apply {
+            layoutManager = LinearLayoutManager(context).apply {
+                stackFromEnd = true
+            }
+            adapter = makeAdapter(ArrayList())
+        }
         return v
     }
 
@@ -87,10 +95,9 @@ class SpeechFragment : Fragment() {
         Log.i("tag", "newList: " + newList.toString())
         val recyclerView = view?.findViewById<RecyclerView>(R.id.recyclerView)
         recyclerView?.apply {
-            layoutManager = LinearLayoutManager(context).apply {
-                stackFromEnd = true
-            }
-            adapter = makeAdapter(newList)
+            val utteranceAdapter = adapter as UtteranceAdapter
+            utteranceAdapter.refreshList(newList)
+            smoothScrollToPosition(newList.size)
         }
     }
 
