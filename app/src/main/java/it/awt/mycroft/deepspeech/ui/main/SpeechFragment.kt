@@ -106,13 +106,9 @@ class SpeechFragment : Fragment() {
     }
 
     fun startSpeechRecognition(view: View){
-        askPermission(
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        ){
+        askPermission(Manifest.permission.RECORD_AUDIO) {
             startSpeechRecognition()
-        }.onDeclined { e ->
+        }.onDeclined {
             //at least one permission have been declined by the user
         }
     }
