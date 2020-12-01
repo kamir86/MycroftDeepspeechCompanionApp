@@ -70,20 +70,21 @@ class SpeechViewModel(application: Application) : AndroidViewModel(application) 
 
     fun sendRequest(requestPhrase: String) {
         val mycroftIp = PreferenceManager.getDefaultSharedPreferences(this.getApplication()).getString("mycroft_ip", null)
-        if(mycroftIp == null){
+        if(mycroftIp.isNullOrBlank()){
             spokenList.postValue(spokenList.value.orEmpty().toMutableList().apply {
                 this.add(Utterance(UtteranceActor.MYCROFT, "Impostare l'ip di mycroft sulle impostazioni"))
             })
-        }
-        GlobalScope.launch(Dispatchers.IO) {
-            MycroftRequestUseCase().postRequest(mycroftIp!!, requestPhrase).consume(onSuccess = {
-                Log.i("response", "response: " + it)
-                spokenList.postValue(spokenList.value.orEmpty().toMutableList().apply {
-                    this.add(Utterance(UtteranceActor.MYCROFT, it))
-                })
-            }, onError = {
+        } else {
+            GlobalScope.launch(Dispatchers.IO) {
+                MycroftRequestUseCase().postRequest(mycroftIp!!, requestPhrase).consume(onSuccess = {
+                    Log.i("response", "response: " + it)
+                    spokenList.postValue(spokenList.value.orEmpty().toMutableList().apply {
+                        this.add(Utterance(UtteranceActor.MYCROFT, it))
+                    })
+                }, onError = {
 
-            })
+                })
+            }
         }
     }
 }
